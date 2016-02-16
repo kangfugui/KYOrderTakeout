@@ -28,6 +28,8 @@
 @property (strong, nonatomic) KYSellerModel *sellerModel;
 @property (strong, nonatomic) NSMutableArray<KYGoodsListModel *> *goodsModelArray;
 @property (strong, nonatomic) NSMutableArray<NSString *> *categoryArray;
+@property (assign, nonatomic) BOOL isScrollDown;
+@property (assign, nonatomic) CGFloat lastOffsetY;
 
 @end
 
@@ -81,42 +83,6 @@
     self.detailView.startLabel.text = @"20元起送";
     
     [self testData];
-    [self.detailView.categoryTable selectRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0]
-                                               animated:YES
-                                         scrollPosition:UITableViewScrollPositionNone];
-    
-//    NSDictionary *param = @{@"sellerId" : @(self.sellerId),
-//                            @"optCode" : @"4",
-//                            @"userId" : [AppCommonConstant sharedCommonConstant].userId};
-//    [KYServiceRequest requestPOSTWithRequestAPI:API_TakeOut
-//                                       isSecret:NO
-//                                  withParameter:param
-//                              withResponseClass:nil
-//                               withSuccessBlock:^(id response)
-//    {
-//        NSDictionary *seller = response[@"sellerDetail"];
-//        NSArray *discount = response[@"discountGoods"];
-//        NSArray *goods = response[@"goods"];
-//
-//        self.sellerModel = [[KYSellerModel alloc] initWithDictionary:seller error:nil];
-//        NSArray *goodsModels = [KYGoodsModel arrayOfModelsFromDictionaries:goods];
-//        NSArray *discountModels = [KYGoodsModel arrayOfModelsFromDictionaries:discount];
-//        
-//        [self.detailView.headerBackgroundImage sd_setImageWithURL:[NSURL URLWithString:kFullImageURL(self.sellerModel.picBanner)]];
-//        
-//        [self configDataWithModels:goodsModels andDiscount:discountModels];
-//        [self.detailView.foodTable reloadData];
-//        [self.detailView.categoryTable reloadData];
-//        
-//        [KYProgressAnimationHUD dismiss];
-//        
-//    } withErrorBlock:^(id error)
-//    {
-//        [KYProgressAnimationHUD dismiss];
-//        [SVProgressHUD showErrorWithStatus:[error description]];
-//    }];
-//    
-//    [KYProgressAnimationHUD show];
 }
 
 -(void)viewWillAppear:(BOOL)animated
@@ -208,23 +174,35 @@
         NSIndexPath *path = [NSIndexPath indexPathForRow:0 inSection:indexPath.row];
         [self.detailView.foodTable scrollToRowAtIndexPath:path
                                          atScrollPosition:UITableViewScrollPositionTop
-                                                 animated:NO];
+                                                 animated:YES];
+    }
+}
+
+- (void)tableView:(UITableView *)tableView willDisplayHeaderView:(UIView *)view forSection:(NSInteger)section
+{
+    if (tableView == self.detailView.foodTable && !self.isScrollDown) {
+        NSIndexPath *select = [NSIndexPath indexPathForRow:section inSection:0];
+        [self.detailView.categoryTable selectRowAtIndexPath:select
+                                                   animated:YES
+                                             scrollPosition:UITableViewScrollPositionMiddle];
+    }
+}
+
+- (void)tableView:(UITableView *)tableView didEndDisplayingHeaderView:(UIView *)view forSection:(NSInteger)section
+{
+    if (tableView == self.detailView.foodTable && self.isScrollDown) {
+        NSIndexPath *select = [NSIndexPath indexPathForRow:section + 1 inSection:0];
+        [self.detailView.categoryTable selectRowAtIndexPath:select
+                                                   animated:YES
+                                             scrollPosition:UITableViewScrollPositionMiddle];
     }
 }
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView
 {
-    if (scrollView == self.detailView.foodTable)
-    {
-        NSIndexPath *path = self.detailView.foodTable.indexPathsForVisibleRows.firstObject;
-        NSIndexPath *select = [NSIndexPath indexPathForRow:path.section inSection:0];
-        
-        if (select.row != self.detailView.categoryTable.indexPathForSelectedRow.row)
-        {
-            [self.detailView.categoryTable selectRowAtIndexPath:select
-                                                       animated:YES
-                                                 scrollPosition:UITableViewScrollPositionNone];
-        }
+    if (scrollView == self.detailView.foodTable) {
+        self.isScrollDown = self.lastOffsetY < scrollView.contentOffset.y;
+        self.lastOffsetY = scrollView.contentOffset.y;
     }
 }
 
@@ -337,14 +315,12 @@
 
 - (void)headerTapAction:(UITapGestureRecognizer *)sender
 {
-//    NSString *suffix = [NSString stringWithFormat:@"shop/takeoutDetail.jsp?uid=%@&sellerId=%zd",[AppCommonConstant sharedCommonConstant].userId,self.sellerId];
-//    [self pushToWebViewWithSuffix:suffix];
+    
 }
 
 - (void)commentButtonAction:(id)sender
 {
-//    NSString *suffix = [NSString stringWithFormat:@"shop/takeoutReply.jsp?uid=%@&sellerId=%zd",[AppCommonConstant sharedCommonConstant].userId,self.sellerId];
-//    [self pushToWebViewWithSuffix:suffix];
+    
 }
 
 - (void)submitButtonAction:(id)sender
